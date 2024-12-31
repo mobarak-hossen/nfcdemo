@@ -30,8 +30,8 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
-//        CardReaderDevice.getInstance().initCardReader()
-//        L.setDebug(true)
+        CardReaderDevice.getInstance().initCardReader()
+        L.setDebug(true)
 
         setContent {
             MyApplicationTheme {
