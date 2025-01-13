@@ -36,7 +36,9 @@ class MainActivity : ComponentActivity() {
         setContent {
             MyApplicationTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    Column (modifier = Modifier.fillMaxSize().padding(16.dp),verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally){
+                    Column (modifier = Modifier
+                        .fillMaxSize()
+                        .padding(16.dp),verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally){
                         GetInfoButton(
                             name = "get nfc information")
                         Spacer(modifier = Modifier.height(16.dp)) // Space between buttons
@@ -64,12 +66,24 @@ fun GetInfoButton(name:String){
     Button(onClick = {
         val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
         val date = Date()
-        val fwVersion = CardReaderDevice.getInstance().nfchwVersion
-        val cardNo = CardReaderDevice.getInstance().readCardNo()
+        val startTime = System.currentTimeMillis() // Capture start time
 
-        var stringData = dateFormat.format(date) + " NFC version " + fwVersion + " card no " + cardNo
-        Log.v("[DEBUG]", "GetInfoButton cardNo $cardNo")
-        Log.v("[DEBUG]",stringData)
+        while (true){
+            val fwVersion = CardReaderDevice.getInstance().nfchwVersion
+            val cardNo = CardReaderDevice.getInstance().readCardNo()
+
+            if (cardNo != null) {
+                var stringData =
+                    dateFormat.format(date) + " NFC version " + fwVersion + " card no " + cardNo
+                Log.v("[DEBUG]", "GetInfoButton cardNo $cardNo")
+                Log.v("[DEBUG]", stringData)
+                break;
+            }
+            if (System.currentTimeMillis() - startTime >= 2000) {
+                print("loop is breaked after two second")
+                break;  // Exit loop after 1 second
+            }
+        }
 
     }) {
         Text(text = name)
@@ -78,31 +92,33 @@ fun GetInfoButton(name:String){
 
 @Composable
 fun ReadButton(name:String){
-    Button(onClick = {
-        val KEY_READ = byteArrayOf(
-            0xFF.toByte(),
-            0xFF.toByte(),
-            0xFF.toByte(),
-            0xFF.toByte(),
-            0xFF.toByte(),
-            0xFF.toByte()
-        )
-        var str = ""
-        for (i in 0..63) {
-            val bReturn = CardReaderDevice.getInstance().readM1CardChunkData(0, i, KEY_READ)
-            if (bReturn != null) {
-                Log.e(
-                    "[DEBUG]",
-                    "bReturn " + i + " length " + bReturn.size + " " + CardReaderUtils.byteArray2HexString(
-                        bReturn
+    Button(
+        onClick = {
+            val KEY_READ = byteArrayOf(
+                0xFF.toByte(),
+                0xFF.toByte(),
+                0xFF.toByte(),
+                0xFF.toByte(),
+                0xFF.toByte(),
+                0xFF.toByte()
+            )
+            var str = ""
+            for (i in 0..63) {
+                val bReturn = CardReaderDevice.getInstance().readM1CardChunkData(0, i, KEY_READ)
+                if (bReturn != null) {
+                    Log.e(
+                        "[DEBUG]",
+                        "bReturn " + i + " length " + bReturn.size + " " + CardReaderUtils.byteArray2HexString(
+                            bReturn
+                        )
                     )
-                )
-                str += CardReaderUtils.byteArray2HexString(bReturn) + "\n"
+                    str += CardReaderUtils.byteArray2HexString(bReturn) + "\n"
+                }
             }
-        }
-        Log.v("[DEBUG]", "ReadButton $str")
+            Log.v("[DEBUG]", "ReadButton $str")
 
-    },) {
+        },
+    ) {
         Text(text = name)
     }
 }
